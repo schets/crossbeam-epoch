@@ -95,9 +95,11 @@ mod garbage;
 mod guard;
 mod internal;
 mod sync;
+mod settings;
 
 pub use self::atomic::{Atomic, CompareAndSetError, CompareAndSetOrdering, Owned, Shared};
 pub use self::guard::{unprotected, Guard};
 #[cfg(feature = "use_std")]
 pub use self::default::{default_collector, default_handle, is_pinned, pin};
 pub use self::collector::{Collector, Handle};
+pub use self::settings::{Collect, ScopedGCSettings};

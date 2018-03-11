@@ -33,6 +33,7 @@ use guard::{unprotected, Guard};
 use garbage::{Bag, Garbage};
 use sync::list::{List, Entry, IterError, IsElement};
 use sync::queue::Queue;
+use settings::*;
 
 /// The global data for a garbage collector.
 pub struct Global {
@@ -177,6 +178,9 @@ pub struct Local {
     ///
     /// This is just an auxilliary counter that sometimes kicks off collection.
     pin_count: Cell<Wrapping<usize>>,
+
+    /// The current gc setting
+    gc_setting: GCSettings,
 }
 
 impl Local {
@@ -197,6 +201,7 @@ impl Local {
                 guard_count: Cell::new(0),
                 handle_count: Cell::new(1),
                 pin_count: Cell::new(Wrapping(0)),
+                gc_setting: GCSettings::new(),
             }).into_shared(&unprotected());
             collector.global.locals.insert(local, &unprotected());
             Handle { local: local.as_raw() }
@@ -279,7 +284,8 @@ impl Local {
 
             // After every `PINNINGS_BETWEEN_COLLECT` try advancing the epoch and collecting
             // some garbage.
-            if count.0 % Self::PINNINGS_BETWEEN_COLLECT == 0 {
+            if *self.gc_setting.collect.get() == Collect::Collect &&
+               count.0 % Self::PINNINGS_BETWEEN_COLLECT == 0 {
                 self.global().collect(&guard);
             }
         }
