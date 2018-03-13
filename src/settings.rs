@@ -82,19 +82,31 @@ impl<T: Stronger + Clone + Copy + Debug> Deref for Setting<T> {
 
 macro_rules! generate_setting_fncs {
     ($s:ident, $v:ident, $va: ident, $st:ident) => {{
+        let use_val = match $st {
+            Strength::AsStrongAs(test) => {
+                strongest($va, test)
+            },
+            _ => ($va),
+        };
         let mut setting = $s.old.$v.get();
         match setting.strength {
             Strength::Lenient => {
-                setting.val = $va;
+                setting.val = use_val;
                 setting.strength = $st;
             },
             Strength::AsStrongAs(test) => {
-                setting.val = strongest($va, test);
-                setting.strength = strongest(setting.strength, $st);
+                if !test.stronger_than(&use_val) {
+                    // since the val is at least as
+                    // strong as the passed strength,
+                    // we know what the passed strength
+                    // will also be stronger
+                    setting.val = use_val;
+                    setting.strength = $st;
+                }
             },
             Strength::Strict => {},
         }
-        $s.cur.collect.set(setting);
+        $s.cur.$v.set(setting);
         $s
     }};
     ($s:ident, $v:ident, $va: ident) => {{
